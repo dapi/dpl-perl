@@ -1,0 +1,58 @@
+***
+УЗЕЛ table
+
+
+Фортма таблицы в xml-конфиге
+
+<table name="NAME1" table="NAME2">
+   <attributes>
+      <id name="ID" type="TYPE" increment="auto"/>
+      <attr name="ATTR1" type="TYPE"/>
+      <attr name="ATTR2" type="TYPE" length="255"/>
+      <attr name="ATTR3" type="TYPE" length="255" />
+   </attributes>
+   <order>ATTR1, ATTR2</order>
+</table>
+
+NAME1 - имя таблицы при вызове из программы, пример table('NAME1')->Delete(1);
+NAME2 - непосредственно имя таблицы в SQL запросе. Обычно NAME1=NAME2
+ID - имя ключевого аттрибута (не обязательная нода)
+TYPE - тип пола (См. filters)
+ATTR1 - имя пола
+<order> - указывается строка для сортировки, передаётся в SQL-запрос полностью
+
+increment="auto" запускает mysql-ные функции для автогенерации
+указанного ключа после добавления записи
+
+length="255" атрибует учитывается в фильтре, кроме него можно
+использовать любые другие атрибуты, без объявления
+
+
+Пример:
+    <table name="address" table="address">
+      <attributes>
+        <id name="address_id" type="numeric" increment="auto"/>
+        <attr name="building_id" type="numeric"/>
+        <attr name="room" type="char"  length="255"/>
+        <attr name="comment"  type="char" length="255" />
+      </attributes>
+      <order>building_id, room</order>
+    </table>
+
+
+
+***
+УЗЕЛ filter
+
+
+    <filter name="TYPE" handler="FILTER_MODULE">
+     узлы и атрибуты, свойственный указанному FILTER_MODULE
+    </filter>
+
+
+TYPE - тип, указываенмый при определении таблицы через <table> или
+используемый при прямом вызове фильтра из программы, например
+filter('date')->ToSQL($date);
+
+
+FILTER_MODULES - модуль реализующий фильтры, обычно лежат на dpl/Db/Filter/

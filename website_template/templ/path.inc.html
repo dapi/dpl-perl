@@ -1,0 +1,4 @@
+[% c = '/' %]
+[%# c = '&#8226;' %]
+[%# &#187; %]
+<div class=path><a href=/>Главная</a>[% FOREACH p = context.path %] $c <a href=/$p [% IF loop.last %]id=current[% END %]>[%  context.links.$p || p %]</a>[% END %]</div>

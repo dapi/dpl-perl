@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="koi8-r"?>
+<xml>
+  <subsystem name="$SYSTEM">
+
+    <directories>
+      <root>/home/danil/projects/$SYSTEM/</root>
+      <pic>pic/</pic>
+    </directories>
+
+    <logger module="dpl::Log::Log4perl">
+      <config>/home/danil/projects/$SYSTEM/logger.conf</config>
+    </logger>
+
+    <timezone>Europe/Moscow</timezone>
+
+    <databases>
+
+      <database user="$DATABASE" password="$DATABASE" type="sql" quote_tables="1">
+        <datasource Warn="1" AutoCommit="1" >DBI:Pg:dbname=$DATABASE</datasource>
+      </database>
+    </databases>
+
+    <filters>
+      <filter name="char" handler="dpl::Db::Filter::char"/>
+      <filter name="ip" handler="dpl::Db::Filter::ip"/>
+      <filter name="numeric" handler="dpl::Db::Filter::numeric"/>
+      <filter name="boolean" handler="dpl::Db::Filter::boolean"/>
+      <filter name="boollog" handler="dpl::Db::Filter::boollog"/>
+
+      <filter name="serializer" handler="dpl::Db::Filter::serialize">
+        <portable>0</portable>
+        <serializer>Data::Dumper</serializer>
+        <compress>0</compress>
+      </filter>
+
+      <filter name="datetime" handler="dpl::Db::Filter::date">
+        <from_sql>
+          <input locale="ru_RU.KOI8-R" timezone="Europe/Moscow"/><!--   shift="+180" shift не учавствует GMT, потому что при преобразовании str2time оно устанавливается в GMT -->
+          <output locale="ru_RU.KOI8-R" timezone="Europe/Moscow">object</output> <!-- %e %B %H:%M -->
+        </from_sql>
+        <to_sql>
+          <input>object</input>
+          <output locale="ru_RU.KOI8-R" timezone="Europe/Moscow">%Y%m%d%H%M%S</output>
+        </to_sql>
+      </filter>
+
+      <filter name="date" handler="dpl::Db::Filter::date">
+        <from_sql>
+          <input  locale="ru_RU.KOI8-R" timezone="Europe/Moscow" shift="+180"/>
+          <output locale="ru_RU.KOI8-R" timezone="Europe/Moscow">object</output>
+        </from_sql>
+        <to_sql>
+          <input>object</input>
+          <output>%Y-%m-%d</output>
+        </to_sql>
+      </filter>
+
+      <filter name="ym" handler="dpl::Db::Filter::date">
+        <from_sql>
+          <input locale="C"/>
+          <output locale="ru_RU.KOI8-R">object</output>
+        </from_sql>
+        <to_sql>
+          <input>object</input>
+          <output locale="ru_RU.KOI8-R">%y%m</output>
+        </to_sql>
+      </filter>
+
+
+      <filter name="time" handler="dpl::Db::Filter::date">
+        <from_sql>
+          <input locale="C"/>
+          <output locale="ru_RU.KOI8-R">object</output>
+        </from_sql>
+        <to_sql>
+          <input>object</input>
+          <output locale="ru_RU.KOI8-R">%T</output>
+        </to_sql>
+      </filter>
+
+      <filter name="timestamp" handler="dpl::Db::Filter::date">
+        <from_sql>
+          <input locale="C"/>
+          <output locale="ru_RU.KOI8-R">object</output>
+        </from_sql>
+        <to_sql>
+          <input>object</input>
+          <output locale="ru_RU.KOI8-R">%Y%m%d%H%M%S</output>
+        </to_sql>
+      </filter>
+    </filters>
+
+    <tables>
+      <table name="user" table="cuser">
+        <attributes>
+          <id name="id" type="numeric" increment="auto"/>
+          <attr name="login"  type="char" length="50" />
+          <attr name="timestamp" type="timestamp"/>
+          <attr name="password"  type="char" length="15" />
+          <attr name="name"  type="char" length="255" />
+          <attr name="sign"  type="char" length="255" />
+          <attr name="email"  type="char" length="120" />
+          <attr name="session" type="char" length="32"/>
+          <attr name="sessiontime" type="timestamp"/>
+          <attr name="lasttime" type="timestamp"/>
+          <attr name="last_ip" type="char"/>
+          <attr name="sign_ip" type="char"/>
+          <attr name="is_logged" type="boolean"/>
+          <attr name="is_admin" type="boolean"/>
+        </attributes>
+        <order>timestamp</order>
+      </table>
+
+    </tables>
+
+
+    <sites class="dpl::Web::Site">
+      <site default="1" home="http://$SITE/"/>
+      <site home="http://dapi/projects/$SITE/"/>
+    </sites>
+
+
+
+    <site>
+      <folder path="pic/" template="DECLINE"/>
+      <folder path="js/" template="DECLINE"/>
+      <folder path="css/" template="DECLINE"/>
+      <page path="" processor="home" template="home"/>
+    </site>
+
+    <processors>
+      <processor name="home" class="$SYSTEM::Home"/>
+    </processors>
+
+    <templates>
+      <template name="home"  view="tt2" cache="0" maxage="0"><file>home.html</file></template>
+      <template name="redirect" view="internal" code="REDIRECT">${uri:home}${result}</template>
+      <template name="file"     type="file">${result}|/tmp/file.tmp</template>
+      <template name="NOT_FOUND" code="404" view="tt2"><file>notfound.html</file></template>
+      <template name="DECLINE" code="DECLINE"/>
+    </templates>
+
+    <views>
+      <view name="internal" class="dpl::Web::View::Internal"/>
+      <view name="tt2" dir="/home/danil/projects/$SYSTEM/templ/"
+        class="dpl::Web::View::TT2" nocache="1" maxage="1"> <!-- code="${result:code}|200" -->
+        <options>
+          <COMPILE_DIR>/tmp/ttc/</COMPILE_DIR>
+          <COMPILE_EXT>.ttc</COMPILE_EXT>
+          <INTERPOLATE>1</INTERPOLATE> <!-- Позволяет использовать $vasya вместо [% vasya %] -->
+          <POST_CHOMP>1</POST_CHOMP>
+          <PRE_CHOMP>1</PRE_CHOMP>
+          <RELATIVE>1</RELATIVE>
+          <ABSOLUTE>1</ABSOLUTE>
+          <TRIM>1</TRIM> <!--	# Удаляет CR/LF -->
+          <AUTO_RESET>0</AUTO_RESET>
+        </options>
+        <header>
+          <Content-Type>text/html; charset=koi8-r</Content-Type>
+          <Cache-control>max-age=0, private</Cache-control>
+          <Date if_not_empty="1">${view:date}</Date> <!-- Устанавливать это заголовок если он получился не пустой -->
+        </header>
+      </view>
+    </views>
+
+  </subsystem>
+</xml>

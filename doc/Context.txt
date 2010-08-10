@@ -1,0 +1,44 @@
+context:
+  site - объект dpl::Web::Site
+
+setting:
+  uri:
+    current - APR::URI
+    remote_ip
+    home - домашний адрес
+    path - полный пусть после домашнего адреса (включая строку запроса)
+    query - полная строка запроса после ?
+    page_path - site->page->path (пусть после home, который найден в конфиге, остальное попадает в tail)
+    current_path - home+path
+    page_tail    - site->pate->tail - хвост, который остался после нахождения страницы
+
+Итого полная строка запроса будет выглядеть как
+
+home+page_path+page_tail+?+query
+
+
+site:
+  home - home адрес
+  config - config()->root()
+  site_node - XML node 'site'
+  path - путь после home-адреса
+  processor
+  container
+  page - hashref найденой в конфиге страницы (page или folder)
+    node
+    path
+    tail
+    processor
+    container
+    oid
+    template
+    action
+    query
+
+
+
+Результат работы lookup у container
+
+processor - имя процессора
+template - имя темплайта
+action - действие в процессоре

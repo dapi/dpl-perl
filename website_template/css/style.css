@@ -1,0 +1,29 @@
+<!--
+   body,p,table,td { color: #333333; font-size: 12px; font-family: Arial, Geneva CY, Sans-Serif;}
+
+   p { text-align: justify; }
+
+   form {margin: 0;}
+
+   h1 { color: #999999; font-size: 20px; font-family: Arial, Geneva CY, Sans-Serif;}
+   h1.warn { color: #dd0000; font-size: 18px; font-family: Arial, Geneva CY, Sans-Serif;}
+   h2 { color: #333333; font-size: 16px; font-family: Arial, Geneva CY, Sans-Serif; padding-top: 10px}
+
+   input.submit { font-weight: bold; color: black; font-size: 12px; background: #F39100; border: solid 1px #333333; padding-right: 5px; padding-left: 5px;}
+   input { border: solid 1px #333333; padding-right: 5px; padding-left: 5px;}
+
+
+#tooltip {
+background: #FCF5E1;
+border: 1px solid #000000;
+text-align: justify;
+font: 11px Tahoma;
+margin:0px;
+padding: 5px 5px;
+position:absolute;
+visibility:hidden
+}
+
+
+
+-->

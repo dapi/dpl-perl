@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="koi8-r"?>
+<xml>
+    <databases>
+      <database user="root" type="sql">
+          <datasource PrintError="1" Warn="1" AutoCommit="0" 
+                      LongTruncOk="1" LongReadLen="30000">DBI:mysql:database=dpl_test;host=localhost</datasource>
+      </database>
+    </databases>
+
+    <filters>
+       <filter name="char" handler="dpl::Db::Filter::char"/>
+       <filter name="numeric" handler="dpl::Db::Filter::numeric"/>
+       <filter name="boolean" handler="dpl::Db::Filter::boolean"/>
+       <filter name="date" handler="dpl::Db::Filter::date">
+            <sql locale="C">%D</sql> <!-- B %e, %Y %T -->
+            <internal locale="ru_RU.KOI8-R">object</internal>
+       </filter>
+       <filter name="timestamp" handler="dpl::Db::Filter::date">
+            <sql locale="C">%Y%m%d%H%M%S</sql>
+            <internal locale="ru_RU.KOI8-R">object</internal> <!-- %e %B %Y, %T -->
+       </filter>
+    </filters>
+
+<tables>
+    <table name="test" table="test">
+      <attributes>
+        <id name="id" type="numeric"/>
+        <attr name="name"  type="char" length="20"/>
+        <attr name="sex"   type="char" length="1"/>
+        <attr name="birth" type="date"/>
+        <attr name="death" type="timestamp"/>
+      </attributes>
+    </table>
+</tables>
+</xml>
