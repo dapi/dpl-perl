@@ -1,0 +1,42 @@
+В контексте будут храниться следующие объекты:
+
+config()
+log()
+xmlFile()
+xsltFile()
+
+
+
+Объект		Ключ		Зависимость	Кешируется между процессами
+
+Config		Путь к файлу	нет		process
+Database 	name		Config		memory
+Filter		name	 	Config		memory
+Logger		'default'	self-config	memory
+xmlfile		Путь к файлу	нет		process
+xsltfile	Путь к файлу	нет		process
+View		name	 	Config		memory
+Table		name		Config,Database memory
+Site		name		Config		memory
+Handler		name		Config		memory
+
+
+context('db')
+
+context()->db()
+context()->filters()->LoadFilter('char')
+
+filter($name);
+
+sub filter {
+   my $name = shift;
+   return context('filters',
+                  $name) || setContext('filters',$name,
+                                       	instance('dpl::Db::Filter',$name));
+}
+
+sub instance {
+    my ($class,$name,$params) = @_;
+    my $object = $class->new();
+    return $object->load($name) || $object->init($name,$params);
+}

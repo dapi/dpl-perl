@@ -1,0 +1,2 @@
+<a href='$link$params' class=[% class || 't' %] [% IF color %] style="color: $color" [% END %]  [% IF set.uri.path==link %] id=current[% END %]>[%  title || context.links.$link || link %]</a>
+[% title='' %][% class='' %][% color='' %]
