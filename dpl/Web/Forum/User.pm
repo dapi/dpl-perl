@@ -1,3 +1,4 @@
+# -*- coding: koi8-r-unix -*-
 package dpl::Web::Forum::User;
 use strict;
 use Exporter;
@@ -10,6 +11,8 @@ use dpl::Web::Utils;
 use dpl::Error;
 use dpl::Context;
 use File::Path;
+use LittleSMS;
+
 use GD;
 use Digest::MD5 qw(md5_hex);
 use vars qw(@ISA);
@@ -410,6 +413,120 @@ sub SendPrivateMail {
   }
   db()->Commit();
   return $user;
+}
+
+# sub SendSMS {
+#   my ($user,$message) = @_;
+#   my $converter = Text::Iconv->new("koi8-r", "utf-8");
+#   $message=uri_escape($converter->convert($message));
+#   my $url = "http://www.shgsm.ru/esme/transmitter.php?id=DC16-847R&daddr=$user->{mobile}&msg=$message";
+#   my $http = new HTTP::Lite;
+#   my $req = $http->request($url) or return undef;
+#   my $res = $http->body();
+#   print STDERR "send SMS $message to user $user->{id} - $user->{mobile}: $res\n";
+#   return $res =~ /OK/ ? $user->{mobile_code} : undef;
+# }
+
+sub GenerateMobileCode {
+  my $code;
+  do {
+    $code = int(rand(9999));
+  } while (!$code);
+  return $code;
+}
+
+
+sub ModifyUser {
+  my ($self,$h) = @_;
+#   $h->{login}=~s/^\s+//g;
+#   $h->{login}=~s/\s+$//g;
+  setContext('fields',$h);
+  my (%e,%f);
+  setContext('bad_fields',\%f);
+  setContext('errors',\%e);
+  $h->{mobile}=~s/\D+//g; $h->{mobile}=~s/^8/7/;
+  $h->{email}=~s/^\s+//g;
+  $h->{email}=~s/\s+$//g;
+  $h->{email}=lc($h->{email});
+  if (!Email::Valid->address($h->{email})) {
+    $e{email}=1;
+    $f{email}=1;
+  }
+#   if (!IsMobileValid($h->{mobile})) {
+#     $e{mobile}=1;
+#     $f{mobile}=1;
+  #   }
+  my $send_sms=0;
+  
+  if (!exists $e{mobile} && ($h->{mobile} ne $self->Get('mobile'))) {
+     if (table('fuser')->
+         Load({mobile=>$h->{mobile},
+               and=>["id <> ".$self->Get('id')]})) {
+       # TODO высылать на мобильный телефон логин и пароль старого пользователя.
+       $e{mobile_exists}=1;
+       $f{mobile}=1;
+     } else {
+      $h->{level}=0;
+      $h->{mobile_checked}=undef;
+      $h->{mobile_code}=$self->GenerateMobileCode();
+      $h->{mobile_tries}=0;
+      # $user->{mobile}=$h->{mobile};
+      # $user->{mobile_code}=$h->{mobile_code};
+
+      $send_sms=1;
+      
+      # if ($self->SendMobileCode()) {
+      #   setContext('mobile_changed',1);
+      # } else {
+      #   $e{mobile2}=1;
+      #   $f{mobile}=1;
+      # }
+    }
+  }
+  if (!exists $e{email} && ($h->{email} ne $self->Get('email'))) {
+    $h->{email_changed}='now()';
+    $h->{email_checked}=undef;
+    $h->{email_tries}=0;
+    # $user->{email}=$h->{email};
+    # if ($h->{email_code}=$self->SendEmailCode(1)) {
+    #   setContext('email_changed',1);
+    # } else {
+    #   $e{email2}=1;
+    #   $f{email}=1;
+    # }
+  }
+  return undef if keys %e;
+  $h->{change_time}='now()';
+  $h->{sms_subscribe}+=0;
+  #print STDERR "modify user $uid".join(',',%$h)."\n";
+  $self->Modify($h);
+  $self->SendMobileCode() if $send_sms;
+  # my $res = table('fuser')->Modify($h,$self->Get);
+  db()->Commit();
+  return 1;
+}
+
+sub SendEmailCode {
+  my ($self,$generate_new) = @_;
+  return 123;
+}
+
+
+
+sub SendSMS {
+  my ($self,$message) = @_;
+  my $converter = Text::Iconv->new("koi8-r", "utf-8");
+  sms()->sendSMS( $self->Get('mobile'), $converter->convert($message));
+}
+
+
+sub SendMobileCode {
+  my ($self) = @_;
+  # print STDERR "send mobile code $user->{mobile_code} to user
+  #$user->{id} - $user->{mobile}: $res ($url)\n";
+  #$self->SendSMS($self->Get('login').", ваш код подтверждения на
+  #zhazhda.ru: ".$self->Get('mobile_code')); 
+  $self->SendSMS($self->Get('login').", your code is: ".$self->Get('mobile_code'));
 }
 
 

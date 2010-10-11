@@ -1,3 +1,4 @@
+# -*- coding: koi8-r-unix -*-
 package dpl::Web::Forum::Processor::Login;
 use strict;
 use Exporter;
@@ -109,6 +110,7 @@ sub ACTION_sign {
       || return undef;
 
   $self->user()->Load($res);
+  $self->user()->SendMobileCode();
   $self->session()->GenerateNew();
   $self->session()->Login($self->user());
   setContext('user',$self->user()->Get());
@@ -175,7 +177,7 @@ sub ACTION_login {
         unless $self->param('r');
       unless ($self->user()->Get('mobile_checked')) {
         $self->template('redirect');
-	return $self->isg() if $is_gallery;
+        return $self->isg() if $is_gallery;
         return '/profile/';
       }
       $r=~s/\?ssid.*$//;
@@ -243,11 +245,12 @@ sub ACTION_sms_edit {
       $self->CheckReferer('Вы действительно желаете отредактировать профиль?');
   my $h = $self->GetParams(qw( sms_event_type));
   my %m = (0=>'zhazhda.ru: SMS оповещение отключено',
-  		    1=>'zhazhda.ru: Включено SMS оповещение о всех событиях Чебоксар',
-		    2=>'zhazhda.ru: Включено SMS оповещение только о лучших событиях в Чебоксарах');
-		    
-  dpl::Web::Forum::SendSMS($self->user()->Get(),$m{$h->{sms_event_type}})
-  	unless $self->user()->Get('sms_event_type')==$h->{sms_event_type};
+           1=>'zhazhda.ru: Включено SMS оповещение о всех событиях Чебоксар',
+           2=>'zhazhda.ru: Включено SMS оповещение только о лучших событиях в Чебоксарах');
+
+  # $self->user()->SendMobileCode()
+  # dpl::Web::Forum::SendSMS($self->user()->Get(),$m{$h->{sms_event_type}})
+  # 	unless $self->user()->Get('sms_event_type')==$h->{sms_event_type};
 	
   table('fuser')->Modify($h,$self->user()->Get('id'));
   db()->Commit();
@@ -295,7 +298,7 @@ sub ACTION_mobile_code {
 
 sub ACTION_send_mobile {
   my $self = shift;
-  if (dpl::Web::Forum::SendMobileCode($self->user()->Get())) {
+  if ($self->user()->SendMobileCode())) {
     setContext('mobile_code','sended');
   } else {
     setContext('mobile_code','problem');
@@ -372,9 +375,7 @@ sub ACTION_edit {
     if $h->{podcast_type} && !$h->{podcast_name};
   $h->{icon}=$h->{web_community} eq 'drugoisport' ? 'd' : '';
   return $self->ACTION_edit_form()
-    unless forum()->
-      ModifyUser($self->user()->Get('id'),
-                 $h);
+    unless $self->user()->ModifyUser($h);
   return '/profile/';
 }
 

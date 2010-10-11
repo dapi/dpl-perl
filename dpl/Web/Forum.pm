@@ -1,3 +1,4 @@
+# -*- coding: koi8-r-unix -*-
 package dpl::Web::Forum;
 use strict;
 use dpl::Db::Database;
@@ -314,103 +315,7 @@ sub GenerateMobileCode {
 }
 
 
-sub SendSMS {
-  my ($user,$message) = @_;
-  my $converter = Text::Iconv->new("koi8-r", "cp1251");
-  $message=uri_escape($converter->convert($message));
-  my $url = "http://www.shgsm.ru/esme/transmitter.php?id=DC16-847R&daddr=$user->{mobile}&msg=$message";
-  my $http = new HTTP::Lite;
-  my $req = $http->request($url) or return undef;
-  my $res = $http->body();
-  print STDERR "send SMS $message to user $user->{id} - $user->{mobile}: $res\n";
-  return $res =~ /OK/ ? $user->{mobile_code} : undef;
-}
 
-
-sub SendMobileCode {
-  my ($user) = @_;
-  return 1; # FAKE
-  
-  my $converter = Text::Iconv->new("koi8-r", "cp1251");
-  my $message=uri_escape($converter->convert("$user->{login}, ваш код подтверждения на zhazhda.ru: $user->{mobile_code}"));
-  my $url = "http://www.shgsm.ru/esme/transmitter.php?id=DC16-847R&daddr=$user->{mobile}&msg=$message";
-  my $http = new HTTP::Lite;
-  my $req = $http->request($url) or return undef;
-  my $res = $http->body();
-  print STDERR "send mobile code $user->{mobile_code} to user $user->{id} - $user->{mobile}: $res ($url)\n";
-  return $res =~ /OK/ ? $user->{mobile_code} : undef;
-}
-
-sub SendEmailCode {
-  my ($user,$generate_new) = @_;
-  return 123;
-}
-
-
-sub ModifyUser {
-  my ($self,$uid,$h) = @_;
-  $uid+=0;
-  my $user = table('fuser')->Load($uid) || fatal("No such user $uid");
-#   $h->{login}=~s/^\s+//g;
-#   $h->{login}=~s/\s+$//g;
-  setContext('fields',$h);
-  my (%e,%f);
-  setContext('bad_fields',\%f);
-  setContext('errors',\%e);
-  $h->{mobile}=~s/\D+//g; $h->{mobile}=~s/^8/7/;
-  $h->{email}=~s/^\s+//g;
-  $h->{email}=~s/\s+$//g;
-  $h->{email}=lc($h->{email});
-  if (!Email::Valid->address($h->{email})) {
-    $e{email}=1;
-    $f{email}=1;
-  }
-#   if (!IsMobileValid($h->{mobile})) {
-#     $e{mobile}=1;
-#     $f{mobile}=1;
-#   }
-  if (!exists $e{mobile} && ($h->{mobile} ne $user->{mobile})) {
-     if (table('fuser')->
-         Load({mobile=>$h->{mobile},
-               and=>["id <> ".$uid]})) {
-       # TODO высылать на мобильный телефон логин и пароль старого пользователя.
-       $e{mobile_exists}=1;
-       $f{mobile}=1;
-     } else {
-      $h->{level}=0;
-      $h->{mobile_checked}=undef;
-      $h->{mobile_code}=GenerateMobileCode();
-      $h->{mobile_tries}=0;
-      $user->{mobile}=$h->{mobile};
-      $user->{mobile_code}=$h->{mobile_code};
-      if (SendMobileCode($user)) {
-        setContext('mobile_changed',1);
-      } else {
-        $e{mobile2}=1;
-        $f{mobile}=1;
-      }
-    }
-  }
-  if (!exists $e{email} && ($h->{email} ne $user->{email})) {
-    $h->{email_changed}='now()';
-    $h->{email_checked}=undef;
-    $h->{email_tries}=0;
-    $user->{email}=$h->{email};
-    if ($h->{email_code}=SendEmailCode($user,1)) {
-      setContext('email_changed',1);
-    } else {
-      $e{email2}=1;
-      $f{email}=1;
-    }
-  }
-  return undef if keys %e;
-  $h->{change_time}='now()';
-  $h->{sms_subscribe}+=0;
-  print STDERR "modify user $uid".join(',',%$h)."\n";
-  my $res = table('fuser')->Modify($h,$uid);
-  db()->Commit();
-  return 1;
-}
 
 sub SignUser {
   my ($self,$form,$session) = @_;
@@ -450,7 +355,6 @@ sub SignUser {
   # Заглушка
   $h->{session} = dpl::Web::Session::generate();
   my $res = table('fuser')->Create($h);
-  SendMobileCode($res);
   db()->Commit();
   fatal("Unknown error while sign user $res") unless $res;
   return $res;
