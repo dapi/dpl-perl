@@ -298,7 +298,7 @@ sub ACTION_mobile_code {
 
 sub ACTION_send_mobile {
   my $self = shift;
-  if ($self->user()->SendMobileCode())) {
+  if ($self->user()->SendMobileCode()) {
     setContext('mobile_code','sended');
   } else {
     setContext('mobile_code','problem');
