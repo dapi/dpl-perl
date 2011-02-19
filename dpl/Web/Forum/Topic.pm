@@ -1524,8 +1524,9 @@ sub GetTopicAccess {
   my $is_admin = getUser() &&
     (getUser()->HasAccess('admin')
      || ($j && $j->Get('user_id')==$uid));
-  $a{can_view} = $self->Get('user_id')==$uid
-    || ($j && $j->GetJournalAccess('can_view'));
+  die 'topic is removed' if $self->Get('is_removed') && !$is_admin;
+  
+  $a{can_view} = $self->Get('user_id')==$uid || ($j && $j->GetJournalAccess('can_view'));
   #  die $self->journal()->GetJournalAccess('can_view');
   if ($uid) {
     $a{foto_moderator} =
@@ -1540,6 +1541,7 @@ sub GetTopicAccess {
         || ($self->Get('upload_access')>=2 && $u->{level}>=1) #          
           || ($self->Get('upload_access')>=3 && $u); #           ;
     $a{can_delete} = $is_admin || $self->Get('user_id')==$uid;
+
     $a{can_comment} = (($j && $j->GetJournalAccess('can_comment')) || !$j)
       && !getUser()->IsBlacker($self->Get('user_id'));
     #context.user.mobile_checked
